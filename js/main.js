@@ -1,37 +1,86 @@
 // ===== Global Variables =====
 let currentCategory = '';
 let currentImageIndex = 0;
-const imagesPerCategory = 5;
+
+// Array para almacenar las imágenes detectadas de cada categoría
+const imageFiles = {
+    positiva: [
+        'anaglifo_Anaglifo_Positivo_2025-10-24.jpg',
+        'anaglifo_Anaglifo_Positivo2.jpg',
+        'anaglifo_Anaglifo_Positivo3.jpg',
+        'negativa.jpg',
+        'p.jpg',
+        'p2.jpg',
+        'positiva.jpg',
+        'positiva1.jpg',
+        'psotiva.jpg'
+    ],
+    negativa: [
+        'anaglifo_Anaglifo_Negativo_2025-10-24.jpg',
+        'anaglifo_Anaglifo_Negativo2.jpg',
+        'anaglifo_Anaglifo_Negativo3.jpg',
+        'anaglifo_Anaglifo_Negativo4.jpg',
+        'anaglifo_Anaglifo_Negativo5.jpg',
+        'negativa2.jpg',
+        'negativa3.jpg'
+    ],
+    sidebyside: [
+        '1.jpg',
+        '2.jpg',
+        '3.jpg',
+        '4.jpg',
+        '5.jpg',
+        '6.jpg',
+        'anaglifo_Side_by_Side_2025-10-24 (1).jpg',
+        'anaglifo_Side_by_Side_2025-10-24 (2).jpg',
+        'anaglifo_Side_by_Side_2025-10-24 (3).jpg',
+        'anaglifo_Side_by_Side_2025-10-24 (4).jpg',
+        'anaglifo_Side_by_Side_2025-10-24 (6).jpg',
+        'anaglifo_Side_by_Side_2025-10-24 (8).jpg',
+        'anaglifo_Side_by_Side_2025-10-24.jpg',
+        'Imagen de WhatsApp 2025-10-26 a las 21.24.16_9ad78294.jpg'
+    ]
+};
 
 const categories = {
     positiva: {
         name: 'Positiva',
         path: 'assets/images/positiva/',
         mode: 'anaglyph',
-        total: 5
+        total: 0
     },
     negativa: {
         name: 'Negativa',
         path: 'assets/images/negativa/',
-        mode: 'anaglyph',
-        total: 5
-    },
-    nula: {
-        name: 'Nula',
-        path: 'assets/images/nula/',
-        mode: 'anaglyph',
-        total: 5
+        mode: 'anaglyph', 
+        total: 0
     },
     sidebyside: {
         name: 'Side by Side',
         path: 'assets/images/sidebyside/',
         mode: 'sidebyside',
-        total: 5
+        total: 0
     }
 };
 
+// Simular las imágenes conocidas basadas en los archivos detectados
+function initializeKnownImages() {
+    // Los arrays de imágenes ya están definidos arriba, solo actualizar totales
+    categories.positiva.total = imageFiles.positiva.length;
+    categories.negativa.total = imageFiles.negativa.length;
+    categories.sidebyside.total = imageFiles.sidebyside.length;
+    
+    // Debug: verificar que los totales se actualizan correctamente
+    console.log('Totales actualizados:', {
+        positiva: categories.positiva.total,
+        negativa: categories.negativa.total,
+        sidebyside: categories.sidebyside.total
+    });
+}
+
 // ===== Initialize =====
 document.addEventListener('DOMContentLoaded', function() {
+    initializeKnownImages();
     setupEventListeners();
     animateOnScroll();
 });
@@ -85,10 +134,8 @@ function openViewer() {
     const category = categories[currentCategory];
     if (!category) return;
     
-    // Update modal title
-    document.getElementById('modalCategory').textContent = category.name;
-    document.getElementById('modalImageNumber').textContent = currentImageIndex + 1;
-    document.getElementById('modalTotalImages').textContent = category.total;
+    // Update modal title with full category name and number
+    updateModalTitle();
     
     // Display image
     displayImage();
@@ -98,31 +145,40 @@ function openViewer() {
     modal.show();
 }
 
+// ===== Update Modal Title =====
+function updateModalTitle() {
+    const category = categories[currentCategory];
+    if (!category) return;
+    
+    const categoryName = category.name;
+    const imageNumber = currentImageIndex + 1;
+    
+    // Update the full title with category name and number
+    document.getElementById('modalCategoryFull').textContent = `${categoryName} ${imageNumber}`;
+}
+
 // ===== Display Image =====
 function displayImage() {
     const category = categories[currentCategory];
     if (!category) return;
     
     const modalViewerContent = document.getElementById('modalViewerContent');
-    const imageSrc = `${category.path}image${currentImageIndex + 1}.jpg`;
+    
+    // Obtener el archivo de imagen real
+    const imageFileName = imageFiles[currentCategory][currentImageIndex];
+    if (!imageFileName) return;
+    
+    const imageSrc = `${category.path}${imageFileName}`;
     const imageAlt = `${category.name} ${currentImageIndex + 1}`;
     
     // Add loading animation
     modalViewerContent.classList.add('loading');
     
     setTimeout(() => {
-        if (category.mode === 'sidebyside') {
-            modalViewerContent.innerHTML = `
-                <img src="${imageSrc}" alt="${imageAlt}" class="slide-in-left">
-            `;
-        } else if (category.mode === 'anaglyph') {
-            modalViewerContent.innerHTML = `
-                <div class="anaglyph-container">
-                    <img src="${imageSrc}" alt="${imageAlt}" class="anaglyph-layer anaglyph-left">
-                    <img src="${imageSrc}" alt="${imageAlt}" class="anaglyph-layer anaglyph-right">
-                </div>
-            `;
-        }
+        // Mostrar la imagen tal como está (ya editada) sin filtros
+        modalViewerContent.innerHTML = `
+            <img src="${imageSrc}" alt="${imageAlt}" class="slide-in-left" style="max-width: 100%; max-height: 75vh; object-fit: contain; border-radius: 10px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);">
+        `;
         
         modalViewerContent.classList.remove('loading');
         updateCarouselControls();
@@ -133,7 +189,7 @@ function displayImage() {
 function previousImage() {
     if (currentImageIndex > 0) {
         currentImageIndex--;
-        document.getElementById('modalImageNumber').textContent = currentImageIndex + 1;
+        updateModalTitle();
         displayImage();
     }
 }
@@ -142,7 +198,7 @@ function nextImage() {
     const category = categories[currentCategory];
     if (currentImageIndex < category.total - 1) {
         currentImageIndex++;
-        document.getElementById('modalImageNumber').textContent = currentImageIndex + 1;
+        updateModalTitle();
         displayImage();
     }
 }
@@ -155,9 +211,11 @@ function updateCarouselControls() {
     const modalPrevBtn = document.getElementById('modalPrevBtn');
     const modalNextBtn = document.getElementById('modalNextBtn');
     const modalCurrentImage = document.getElementById('modalCurrentImage');
+    const modalTotal = document.getElementById('modalTotal');
     
     // Update counter
     modalCurrentImage.textContent = currentImageIndex + 1;
+    modalTotal.textContent = category.total;
     
     // Update button states
     modalPrevBtn.disabled = currentImageIndex <= 0;
@@ -236,9 +294,10 @@ window.addEventListener('load', function() {
 });
 
 // ===== Console Welcome Message =====
-console.log('%c🎨 Visor Estereoscópico 3D', 'font-size: 24px; font-weight: bold; color: #6366f1;');
-console.log('%cDesarrollado por: Jez', 'font-size: 14px; color: #8b5cf6;');
+console.log('%c🎨 Visor Estereoscópico 3D', 'font-size: 28px; font-weight: bold; background: linear-gradient(135deg, #00fff5, #00d4ff); -webkit-background-clip: text; color: transparent;');
+console.log('%c✨ Desarrollado por: Jezrael Jared Gomez Torres', 'font-size: 16px; font-weight: bold; color: #00d4ff; text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);');
 console.log('%c© 2025 - Todos los derechos reservados', 'font-size: 12px; color: #94a3b8;');
+console.log('%c⚡ Tecnología: JavaScript ES6 + Bootstrap 5 + CSS Futurista', 'font-size: 11px; color: #00fff5;');
 
 // ===== Touch Swipe Support =====
 let touchStartX = 0;
